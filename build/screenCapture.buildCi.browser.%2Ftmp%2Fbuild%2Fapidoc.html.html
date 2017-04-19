@@ -1,0 +1,205 @@
+<html><head></head><body><div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a href="https://github.com/robrich/gulp-exec">gulp-exec (v2.1.3)</a>
+</h1>
+<h4>exec plugin for gulp</h4>
+<div class="apidocSectionDiv"><a href="#apidoc.tableOfContents" id="apidoc.tableOfContents"><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.gulp-exec">module gulp-exec</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.gulp-exec.gulp-exec">
+            function <span class="apidocSignatureSpan"></span>gulp-exec
+            <span class="apidocSignatureSpan">(command, opt)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.gulp-exec.reporter">
+            function <span class="apidocSignatureSpan">gulp-exec.</span>reporter
+            <span class="apidocSignatureSpan">(opt)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.gulp-exec" id="apidoc.module.gulp-exec">module gulp-exec</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.gulp-exec.gulp-exec" id="apidoc.element.gulp-exec.gulp-exec">
+        function <span class="apidocSignatureSpan"></span>gulp-exec
+        <span class="apidocSignatureSpan">(command, opt)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function doExec(command, opt){
+	if (!command) {
+		throw new Error('command is blank');
+	}
+
+	if (!opt) {
+		opt = {};
+	}
+
+	if (!opt.env) {
+		opt.env = process.env;
+	}
+
+	// Include node_modules/.bin on the path when we execute the command.
+	var oldPath = opt.env.PATH;
+	var newPath = path.join(__dirname, '..', '..', '.bin');
+	newPath += path.delimiter;
+	newPath += oldPath;
+	opt.env.PATH = newPath;
+
+	return through2.obj(function (file, enc, cb){
+		var cmd = gutil.template(command, {file: file, options: opt});
+		var that = this;
+
+		exec(cmd, opt, function (err, stdout, stderr) {
+			file.exec = {
+				err: err,
+				stdout: stdout.trim(),
+				stderr: stderr.trim()
+			};
+			if (opt.pipeStdout) {
+				file.exec.contents = file.contents;
+				file.contents = new Buffer(stdout); // FRAGILE: if it wasn't a buffer it is now
+			}
+			if (err &amp;&amp; !opt.continueOnError) {
+				that.emit('error', new gutil.PluginError(PLUGIN_NAME, err));
+			}
+			that.push(file);
+			cb();
+		});
+	});
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.gulp-exec.reporter" id="apidoc.element.gulp-exec.reporter">
+        function <span class="apidocSignatureSpan">gulp-exec.</span>reporter
+        <span class="apidocSignatureSpan">(opt)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function reporter(opt){
+	if (!opt) {
+		opt = {};
+	}
+
+	if (typeof opt.err === 'undefined') {
+		opt.err = true;
+	}
+	if (typeof opt.stderr === 'undefined') {
+		opt.stderr = true;
+	}
+	if (typeof opt.stdout === 'undefined') {
+		opt.stdout = true;
+	}
+
+	return through2.obj(function (file, enc, cb){
+		if (file &amp;&amp; file.exec) {
+			var e = file.exec;
+			if (e.stdout &amp;&amp; opt.stdout) {
+				gutil.log(e.stdout);
+			}
+			if (e.stderr &amp;&amp; opt.stderr) {
+				gutil.log(e.stderr);
+			}
+			if (e.err &amp;&amp; opt.err) {
+				gutil.log(e.err);
+			}
+		}
+
+		this.push(file);
+		cb();
+	});
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+  var reportOptions = {
+  	err: true, // default = true, false means don't write err
+  	stderr: true, // default = true, false means don't write stderr
+  	stdout: true // default = true, false means don't write stdout
+  }
+  return gulp.src('./**/**')
+    .pipe(exec('git checkout &lt;%= file.path %&gt; &lt;%= options.customTemplatingThing %&gt;', options))
+    .pipe(exec.<span class="apidocCodeKeywordSpan">reporter</span>(reportOptions));
+});
+```
+
+**Note**: If you just want to run a command, just run the command, don't use this plugin:
+
+```js
+var exec = require('child_process').exec;
+...</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
+</body></html>
